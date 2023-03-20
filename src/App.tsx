@@ -26,43 +26,41 @@ const columns: ITableColumn[] = [
 ];
 
 function App() {
-  const initDataWithEdit = initData.map((item) => ({
-    ...item,
-    edit: () => (
-      <Button onClick={() => setEditItem({ ...item })} className="btn btn-primary">
-        Edit
-      </Button>
-    ),
-  }));
-  const [items, setItems] = useState<DataType>(initDataWithEdit);
+  const addEditToItem = (arr: DataType) => {
+    return arr.map((item) => ({
+      ...item,
+      edit: () => (
+        <Button onClick={() => setEditItem({ ...item })} className="btn btn-primary">
+          Edit
+        </Button>
+      ),
+    }));
+  };
+
+  const [items, setItems] = useState<DataType>(addEditToItem(initData));
   const [search, setSearch] = useState<string>("");
-  const [filterKey, setFilterKey] = useState<string>("name");
+  const [filterKey, setFilterKey] = useState<string>(columns[0].key);
   const [editItem, setEditItem] = useState<null | IPage | IPricePlan | IProduct>(null);
 
   const closeModal = () => setEditItem(null);
+  const filter = (item: any, searchText: string, key: string) => {
+    const values = Object.values(item);
+    return !!searchText
+      ? item[key] &&
+          values.some((value) => typeof value === "string" && value.toLowerCase().includes(searchText.toLowerCase()))
+      : item[key];
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value) setItems(initDataWithEdit);
-    else {
-      const filteredResults = initDataWithEdit.filter((item) => {
-        const values = Object.values(item);
-        return values.some(
-          (value) => typeof value === "string" && value.toLowerCase().includes(e.target.value.toLowerCase())
-        );
-      });
-      setItems(filteredResults);
-    }
-
+    const filteredResults = initData.filter((item) => filter(item, e.target.value, filterKey));
     setSearch(e.target.value);
+    setItems(addEditToItem(filteredResults));
   };
 
   const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilterKey(e.target.value);
-    const filteredResults = initDataWithEdit.filter((item) => {
-      return !!(item as any)[e.target.value];
-    });
-
-    setItems(filteredResults);
+    const filteredResults = initData.filter((item) => filter(item, search, e.target.value));
+    setItems(addEditToItem(filteredResults));
   };
 
   const update = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,19 +68,25 @@ function App() {
   };
 
   const saveItem = () => {
-    const savedIndex = initData.findIndex(({ id }) => id === editItem?.id);
     if (editItem) {
-      initDataWithEdit[savedIndex] = {
-        ...editItem,
-        edit: () => (
-          <Button onClick={() => setEditItem({ ...initDataWithEdit[savedIndex] })} className="btn btn-primary">
-            Edit
-          </Button>
-        ),
-      };
+      setItems((prevItems) => {
+        const savedInitIndex = initData.findIndex(({ id }) => id === editItem?.id);
+        initData[savedInitIndex] = editItem;
+
+        const newItems = [...prevItems];
+        const index = newItems.findIndex(({ id }) => id === editItem?.id);
+        newItems[index] = {
+          ...initData[savedInitIndex],
+          edit: () => (
+            <Button onClick={() => setEditItem({ ...initData[savedInitIndex] })} className="btn btn-primary">
+              Edit
+            </Button>
+          ),
+        };
+        return newItems;
+      });
     }
 
-    setItems(initDataWithEdit);
     setEditItem(null);
   };
 

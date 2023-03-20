@@ -63,7 +63,6 @@ const Table: React.FC<ITableProp> = ({ columns = [], items = [], portionSize = 3
   let leftPageNumber = (state.portionNumber - 1) * portionSize + 1;
   let rightPageNumber = state.portionNumber * portionSize;
 
-  console.log("table render");
   return (
     <table className="table">
       <thead>
